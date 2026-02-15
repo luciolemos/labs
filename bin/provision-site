@@ -26,6 +26,17 @@ github_auto_publish="${GITHUB_AUTO_PUBLISH:-true}"
 github_owner="${GITHUB_OWNER:-}"
 github_visibility="${GITHUB_VISIBILITY:-private}"
 
+run_as_owner() {
+  local cmd="$1"
+  if [[ "$(id -un)" == "$site_owner" ]]; then
+    bash -lc "$cmd"
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo -u "$site_owner" bash -lc "$cmd"
+  else
+    bash -lc "$cmd"
+  fi
+}
+
 if ! command -v apachectl >/dev/null 2>&1; then
   echo "apachectl not found" >&2
   exit 1
@@ -2265,49 +2276,33 @@ CSS
   chmod -R 775 "$dir" || true
 
   if command -v git >/dev/null 2>&1 && [[ ! -d "$dir/.git" ]]; then
-    (
-      cd "$dir"
-      git init -q -b main 2>/dev/null || { git init -q && git checkout -q -b main >/dev/null 2>&1 || true; }
-      if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-        git config commit.gpgsign false || true
-        git config user.name >/dev/null 2>&1 || git config user.name "Labs Provisioner"
-        git config user.email >/dev/null 2>&1 || git config user.email "provisioner@local"
-        git add -A
-        if ! git diff --cached --quiet; then
-          git commit -m "chore: initial scaffold" >/dev/null 2>&1 || true
-        fi
-      fi
-    )
+    run_as_owner "cd \"$dir\" && \
+      git init -q -b main 2>/dev/null || { git init -q && git checkout -q -b main >/dev/null 2>&1 || true; } && \
+      if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
+        git config commit.gpgsign false || true; \
+        git config user.name >/dev/null 2>&1 || git config user.name \"Labs Provisioner\"; \
+        git config user.email >/dev/null 2>&1 || git config user.email \"provisioner@local\"; \
+        git add -A; \
+        if ! git diff --cached --quiet; then git commit -m \"chore: initial scaffold\" >/dev/null 2>&1 || true; fi; \
+      fi"
   fi
 
   if [[ "$github_auto_publish" == "true" ]] && command -v gh >/dev/null 2>&1 && command -v git >/dev/null 2>&1 && [[ -d "$dir/.git" ]]; then
-    (
-      cd "$dir"
-      if git rev-parse --is-inside-work-tree >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
-        owner="$github_owner"
-        if [[ -z "$owner" ]]; then
-          owner="$(gh api user -q .login 2>/dev/null || true)"
-        fi
-        if [[ -n "$owner" ]]; then
-          case "$github_visibility" in
-            public|private|internal) ;;
-            *) github_visibility="private" ;;
-          esac
-          repo="$owner/$slug"
-          if ! git remote get-url origin >/dev/null 2>&1; then
-            if ! gh repo view "$repo" >/dev/null 2>&1; then
-              gh repo create "$repo" --"$github_visibility" --source=. --remote=origin >/dev/null 2>&1 || true
-            fi
-            if ! git remote get-url origin >/dev/null 2>&1; then
-              git remote add origin "git@github.com:$repo.git" >/dev/null 2>&1 || true
-            fi
-          fi
-          if git remote get-url origin >/dev/null 2>&1; then
-            git push -u origin main >/dev/null 2>&1 || true
-          fi
-        fi
-      fi
-    )
+    run_as_owner "cd \"$dir\" && \
+      if git rev-parse --is-inside-work-tree >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then \
+        owner=\"$github_owner\"; \
+        if [[ -z \"\$owner\" ]]; then owner=\"\$(gh api user -q .login 2>/dev/null || true)\"; fi; \
+        if [[ -n \"\$owner\" ]]; then \
+          vis=\"${github_visibility}\"; \
+          case \"\$vis\" in public|private|internal) ;; *) vis=\"private\" ;; esac; \
+          repo=\"\$owner/$slug\"; \
+          if ! git remote get-url origin >/dev/null 2>&1; then \
+            if ! gh repo view \"\$repo\" >/dev/null 2>&1; then gh repo create \"\$repo\" --\"\$vis\" --source=. --remote=origin >/dev/null 2>&1 || true; fi; \
+            if ! git remote get-url origin >/dev/null 2>&1; then git remote add origin \"git@github.com:\$repo.git\" >/dev/null 2>&1 || true; fi; \
+          fi; \
+          if git remote get-url origin >/dev/null 2>&1; then git push -u origin main >/dev/null 2>&1 || true; fi; \
+        fi; \
+      fi"
   fi
 fi
 
