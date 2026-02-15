@@ -16,5 +16,11 @@
         "description": "NatalCode desenvolvimento de software -soluções de TI para o seu negócio.",
         "url": "http:\/\/88.198.104.148\/natalcode\/",
         "protected": false
+    },
+    {
+        "name": "Site2",
+        "description": "Site2",
+        "url": "http:\/\/88.198.104.148\/site2\/",
+        "protected": false
     }
 ]
