@@ -175,6 +175,7 @@ Este e o template real. Ele **cria os arquivos** do site, injeta Twig, assets, `
 - Publicação automática no GitHub (ao fim da criação):
 - Pré-requisito: `gh` instalado e autenticado (`gh auth status`).
 - Se não houver `origin`, o script cria/conecta `github.com/<owner>/<slug>` e executa `git push -u origin main`.
+- Se já existir `origin` com URL diferente (ex.: repo renomeado), o script corrige automaticamente para `github.com/<owner>/<slug>` antes do push.
 - Variáveis de controle:
 - `GITHUB_AUTO_PUBLISH=true|false` (padrão `true`)
 - `GITHUB_OWNER=<usuario>` (opcional; quando vazio usa o login autenticado no `gh`)

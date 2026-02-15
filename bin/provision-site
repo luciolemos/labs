@@ -2300,6 +2300,14 @@ CSS
             if ! gh repo view \"\$repo\" >/dev/null 2>&1; then gh repo create \"\$repo\" --\"\$vis\" --source=. --remote=origin >/dev/null 2>&1 || true; fi; \
             if ! git remote get-url origin >/dev/null 2>&1; then git remote add origin \"git@github.com:\$repo.git\" >/dev/null 2>&1 || true; fi; \
           fi; \
+          if git remote get-url origin >/dev/null 2>&1; then \
+            cur=\"\$(git remote get-url origin 2>/dev/null || true)\"; \
+            exp_ssh=\"git@github.com:\$repo.git\"; \
+            exp_https=\"https://github.com/\$repo.git\"; \
+            if [[ \"\$cur\" != \"\$exp_ssh\" && \"\$cur\" != \"\$exp_https\" ]]; then \
+              git remote set-url origin \"\$exp_ssh\" >/dev/null 2>&1 || git remote set-url origin \"\$exp_https\" >/dev/null 2>&1 || true; \
+            fi; \
+          fi; \
           if git remote get-url origin >/dev/null 2>&1; then git push -u origin main >/dev/null 2>&1 || true; fi; \
         fi; \
       fi"
