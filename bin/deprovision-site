@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+slug="${1:-}"
+remove_dir="${2:-}"
+
+if [[ -z "$slug" ]]; then
+  echo "missing slug" >&2
+  exit 1
+fi
+
+if [[ ! "$slug" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+  echo "invalid slug" >&2
+  exit 1
+fi
+
+conf="/etc/apache2/conf-available/site-paths.conf"
+base="/var/www"
+site_dir="$base/$slug"
+begin="# BEGIN LABS $slug"
+end="# END LABS $slug"
+
+if [[ ! -f "$conf" ]]; then
+  echo "apache conf not found: $conf" >&2
+  exit 1
+fi
+
+if ! grep -q "^$begin$" "$conf"; then
+  echo "managed block not found for $slug" >&2
+  exit 1
+fi
+
+tmp="$(mktemp)"
+backup="$(mktemp)"
+cp "$conf" "$backup"
+
+awk -v begin="$begin" -v end="$end" '
+  BEGIN {in_block = 0}
+  $0 == begin {in_block = 1; next}
+  $0 == end {in_block = 0; next}
+  !in_block {print}
+' "$conf" > "$tmp"
+
+mv "$tmp" "$conf"
+
+test_cmd=""
+if command -v apache2ctl >/dev/null 2>&1; then
+  test_cmd="apache2ctl -t"
+elif command -v apachectl >/dev/null 2>&1; then
+  test_cmd="apachectl -t"
+fi
+
+if [[ -n "$test_cmd" ]]; then
+  if ! $test_cmd >/dev/null 2>&1; then
+    cp "$backup" "$conf"
+    echo "apache config test failed; rollback applied" >&2
+    exit 1
+  fi
+fi
+
+if command -v systemctl >/dev/null 2>&1; then
+  if ! systemctl reload apache2 >/dev/null 2>&1; then
+    cp "$backup" "$conf"
+    echo "apache reload failed; rollback applied" >&2
+    exit 1
+  fi
+fi
+
+if [[ "$remove_dir" == "--remove-dir" ]] && [[ -d "$site_dir" ]]; then
+  rm -rf "$site_dir"
+fi
+
+rm -f "$backup"
+printf "ok\n"

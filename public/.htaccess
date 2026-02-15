@@ -1,0 +1,10 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Se existir arquivo ou diretorio real, serve direto
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Tudo o resto vai para o front controller (Slim)
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>

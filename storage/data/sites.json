@@ -1,0 +1,44 @@
+[
+    {
+        "name": "2sgb\/2gb\/cbmrn",
+        "description": "Site do 2º Subgrupamento de Bombeiros Militar",
+        "url": "http:\/\/88.198.104.148\/site1\/",
+        "protected": true
+    },
+    {
+        "name": "RLC",
+        "description": "RLC - Instalações Elétricas e Automação Residencial.",
+        "url": "http:\/\/88.198.104.148\/rlc\/",
+        "protected": true
+    },
+    {
+        "name": "site2",
+        "description": "Site do 2º Subgrupamento de Bombeiros Militar",
+        "url": "http:\/\/88.198.104.148\/site2\/",
+        "protected": false
+    },
+    {
+        "name": "NatalCode",
+        "description": "NatalCode desenvolvimento de software -soluções de TI para o seu negócio.",
+        "url": "http:\/\/88.198.104.148\/natalcode\/",
+        "protected": false
+    },
+    {
+        "name": "Site3",
+        "description": "Site3",
+        "url": "http:\/\/88.198.104.148\/site3\/",
+        "protected": false
+    },
+    {
+        "name": "Site 4",
+        "description": "Site4",
+        "url": "http:\/\/88.198.104.148\/site4\/",
+        "protected": false
+    },
+    {
+        "name": "Site5",
+        "description": "Site5",
+        "url": "http:\/\/88.198.104.148\/site5\/",
+        "protected": false
+    }
+]

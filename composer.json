@@ -1,0 +1,15 @@
+{
+  "name": "labs/painel",
+  "description": "Painel simples em Slim MVC",
+  "type": "project",
+  "require": {
+    "php": "^8.2",
+    "slim/slim": "^4.12",
+    "slim/psr7": "^1.7"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/"
+    }
+  }
+}
