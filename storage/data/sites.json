@@ -13,14 +13,26 @@
     },
     {
         "name": "NatalCode",
-        "description": "NatalCode desenvolvimento de software -soluções de TI para o seu negócio.",
+        "description": "NatalCode",
         "url": "http:\/\/88.198.104.148\/natalcode\/",
-        "protected": false
+        "protected": true
     },
     {
         "name": "Site2",
         "description": "Site2",
         "url": "http:\/\/88.198.104.148\/site2\/",
+        "protected": false
+    },
+    {
+        "name": "Site3",
+        "description": "Site3",
+        "url": "http:\/\/88.198.104.148\/site3\/",
+        "protected": false
+    },
+    {
+        "name": "Site4",
+        "description": "Site4",
+        "url": "http:\/\/88.198.104.148\/site4\/",
         "protected": false
     }
 ]

@@ -7,15 +7,17 @@
   </div>
 
   <?php if (!empty($error)): ?>
-    <div class="alert">Usuario ou senha invalidos.</div>
+    <div class="alert" role="alert" aria-live="assertive">Usuario ou senha invalidos.</div>
   <?php endif; ?>
 
   <form class="form" method="post" action="/login">
-    <div class="form-row" style="grid-template-columns: 1fr;">
-      <input class="input" name="user" placeholder="Usuario" />
-      <input class="input" type="password" name="pass" placeholder="Senha" />
+    <div class="form-row form-row-single">
+      <label class="sr-only" for="login-user">Usuario</label>
+      <input class="input" id="login-user" name="user" placeholder="Usuario" autocomplete="username" required />
+      <label class="sr-only" for="login-pass">Senha</label>
+      <input class="input" id="login-pass" type="password" name="pass" placeholder="Senha" autocomplete="current-password" required />
     </div>
-    <div style="display:flex; gap:10px; flex-wrap: wrap;">
+    <div class="form-actions">
       <button class="button" type="submit">Entrar</button>
       <a class="button" href="/reset">Esqueci minha senha</a>
     </div>

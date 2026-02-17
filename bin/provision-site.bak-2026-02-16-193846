@@ -26,7 +26,6 @@ site_group="www-data"
 github_auto_publish="${GITHUB_AUTO_PUBLISH:-true}"
 github_owner="${GITHUB_OWNER:-}"
 github_visibility="${GITHUB_VISIBILITY:-private}"
-template_dir="${SITE_TEMPLATE_DIR:-/var/www/labs/templates/site-template-v4}"
 
 run_as_owner() {
   local cmd="$1"
@@ -54,40 +53,6 @@ if [[ -z "$title" ]]; then
 fi
 
 if [[ "$force" == "--force" || ! -f "$dir/.site-template" ]]; then
-  if [[ -d "$template_dir" ]]; then
-    template_version="template-v4"
-
-    if [[ "$force" == "--force" && -d "$dir" ]]; then
-      find "$dir" -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
-    fi
-
-    mkdir -p "$dir"
-    cp -a "$template_dir"/. "$dir"/
-
-    cat > "$dir/.env" <<ENV
-APP_NAME="$title"
-APP_MARK="A"
-APP_BADGE="PHP 8.3+"
-APP_PAGE_TITLE="$title — Landing moderna em PHP"
-APP_BASE="/$slug"
-APP_ENV="production"
-GITHUB_URL="#"
-X_URL="https://x.com"
-INSTAGRAM_URL="https://instagram.com"
-WHATSAPP_URL="https://wa.me/5584998087340"
-
-ENV="production"
-ENV
-
-    if [[ -f "$dir/composer.json" ]]; then
-      perl -0pi -e "s/\"name\"\\s*:\\s*\"[^\"]+\"/\"name\": \"agency\\/$slug\"/m" "$dir/composer.json"
-    fi
-
-    mkdir -p "$dir/storage/cache/twig" "$dir/storage/logs" "$dir/storage/data"
-    chown -R "$site_owner:$site_group" "$dir/storage" || true
-    chmod -R 775 "$dir/storage" || true
-  else
-    template_version="template-v3"
   mkdir -p "$dir/public/assets/css" \
            "$dir/public/assets/js" \
            "$dir/public/assets/img" \
@@ -108,10 +73,7 @@ ENV
   "name": "agency/$slug",
   "type": "project",
   "require": {
-    "twig/twig": "^3.0",
-    "slim/slim": "^4.15",
-    "slim/psr7": "^1.8",
-    "slim/twig-view": "^3.4"
+    "twig/twig": "^3.0"
   },
   "autoload": {
     "psr-4": {
@@ -184,75 +146,162 @@ SVG
   fi
 
   cat > "$dir/README.md" <<'MD'
-# Slim Site Template
+# System Landing Page
 
-Template de site gerado pelo Labs com base em Slim 4 e Twig.
+## Visão geral
+- **Projeto**: Template de landing page para produtos e serviços de tecnologia.
+- **Objetivo**: Ajudar você a publicar uma landing profissional com foco em clareza, confiança e conversão.
+- **Stack**: PHP 8.3+, Twig 3, Bootstrap 5 e Apache.
+- **Tipografia**: Sora (títulos) + Work Sans (texto).
+- **CSS principal**: `public/assets/css/landing.css`.
+- **JS principal**: `public/assets/js/landing.js`.
+- **Página**: `views/pages/home.twig`.
+- **Navbar**: `views/partials/navbar.twig`.
+- **Footer**: `views/partials/footer.twig`.
+- **Brand padrão**: `public/assets/img/brands/white.png` (tema escuro) e `public/assets/img/brands/black.png` (tema claro).
 
-## Stack
-- PHP 8.3+
-- Slim 4 (`slim/slim`, `slim/psr7`)
-- Twig (`slim/twig-view`, `twig/twig`)
-- Apache 2.4 com `mod_rewrite`
+## Requisitos
+- PHP 8.3+ com extensões comuns (`mbstring`, `json`, `pdo`, `openssl`, `ctype`).
+- Composer 2+.
+- Apache 2.4+ com `mod_rewrite`.
 
-## Estrutura
-- `public/`: front controller (`index.php`), `.htaccess` e assets.
-- `routes/web.php`: rotas Slim.
-- `src/Controllers/HomeController.php`: controller HTTP (PSR-7).
-- `src/Core/Env.php`: loader simples de `.env`.
-- `views/`: templates Twig.
-- `storage/`: cache/logs.
+## Estrutura do projeto
+- `public/`: DocumentRoot do site (front controller, assets, `.htaccess`).
+- `src/`: núcleo da aplicação (`Core`, controllers, etc.).
+- `views/`: templates Twig (`base`, páginas e parciais).
+- `routes/web.php`: mapa simples de rotas.
+- `storage/`: cache e logs.
+- `vendor/`: dependências instaladas pelo Composer.
 
-## Execucao local
+## Composer (como funciona)
+- O arquivo `composer.json` define dependências e autoload PSR-4.
+- O namespace `App\\` aponta para `src/`.
+- O Twig é resolvido via Composer em `vendor/`.
+
+Comandos principais:
+
 ```bash
 composer install
+composer dump-autoload -o
 ```
 
-Abra:
-- `http://88.198.104.148/<slug>/`
+Em servidor de produção:
 
-## Como funciona
-1. Apache aponta para `/var/www/<slug>/public`.
-2. `public/index.php` sobe Slim, Twig e middlewares.
-3. `routes/web.php` registra endpoints.
-4. Controller renderiza Twig.
+```bash
+composer install --no-dev --optimize-autoloader
+```
 
-## Alias Apache (Labs)
-Formato correto:
+## Versionamento Git automático
+- O provisionamento inicializa Git automaticamente no diretório do site gerado.
+- O branch padrão é `main`.
+- O script aplica `git add -A` e cria um commit inicial:
+  - `chore: initial scaffold`
+- Isso só acontece quando o projeto ainda não possui `.git`.
+- Publicação GitHub automática:
+  - Se `gh` estiver autenticado, o script cria/conecta `github.com/<owner>/<slug>` e executa `git push -u origin main`.
+  - Controle por variáveis:
+    - `GITHUB_AUTO_PUBLISH` (`true`/`false`, padrão `true`)
+    - `GITHUB_OWNER` (opcional; se vazio, usa login do `gh auth`)
+    - `GITHUB_VISIBILITY` (`private`, `public` ou `internal`, padrão `private`)
+
+## Fluxo HTTP e .htaccess
+Fluxo padrão:
+1. Apache recebe a requisição.
+2. O `.htaccess` em `public/` redireciona tudo para `index.php` (exceto arquivos existentes).
+3. O front controller (`public/index.php`) sobe bootstrap, carrega rotas e despacha controller.
+4. O controller monta dados e renderiza Twig.
+
+Regra central do `.htaccess`:
+- Se o arquivo/pasta existir, Apache serve direto.
+- Se não existir, reescreve para `index.php`.
+
+## Apache VirtualHost (VPS)
+Exemplo de configuração:
 
 ```apache
-Alias /<slug> /var/www/<slug>/public
-<Directory /var/www/<slug>/public>
-  Options FollowSymLinks
-  AllowOverride All
-  Require all granted
-</Directory>
+<VirtualHost *:80>
+    ServerName exemplo.com
+    ServerAlias www.exemplo.com
+    DocumentRoot /var/www/site/public
+
+    <Directory /var/www/site/public>
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/site-error.log
+    CustomLog ${APACHE_LOG_DIR}/site-access.log combined
+</VirtualHost>
 ```
 
-## Variaveis de ambiente
-- `APP_NAME`
-- `APP_BASE` (ex.: `/site2`)
-- `APP_ENV` (`production` ou `dev`)
-- Links sociais e contato (`GITHUB_URL`, `X_URL`, `INSTAGRAM_URL`, `WHATSAPP_URL`)
+Depois habilite e recarregue:
 
-## Deploy
-1. Garantir permissao de escrita em `storage/`.
-2. Rodar `composer install --no-dev --optimize-autoloader`.
-3. Validar Apache:
 ```bash
-sudo apache2ctl -t
+sudo a2enmod rewrite
+sudo a2ensite site.conf
 sudo systemctl reload apache2
 ```
+
+## Deploy rápido (VPS)
+Checklist enxuto para colocar no ar:
+1. Copie o projeto para `/var/www/site`.
+2. Garanta permissões de escrita em `storage/`.
+3. Instale dependências com Composer em modo produção.
+4. Crie/habilite o VirtualHost com `DocumentRoot` apontando para `public/`.
+5. Ative `rewrite` e recarregue o Apache.
+
+Comandos de referência:
+
+```bash
+sudo chown -R luciolemos:www-data /var/www/site
+sudo chmod -R 775 /var/www/site
+cd /var/www/site && composer install --no-dev --optimize-autoloader
+sudo a2enmod rewrite
+sudo a2ensite site.conf && sudo systemctl reload apache2
+```
+
+## Variáveis de ambiente
+- Definidas em `.env` na raiz.
+- Carregadas por `src/Core/Env.php`.
+- Ajuste ao menos: `APP_NAME`, `APP_BASE`, `APP_ENV`, `WHATSAPP_URL`.
+
+## Seções da landing page
+- **Hero**: proposta de valor + CTA principal.
+- **Recursos**: benefícios e diferenciais da solução.
+- **Projetos recentes**: cards com imagem, título e descrição (array Twig).
+- **Clientes que confiam**: depoimentos com avatars (array Twig).
+- **Como funciona**: fluxo em etapas para explicar implementação.
+- **Docs/Blocos**: reforço técnico/comercial com cartões.
+- **CTA**: chamada principal para ação.
+- **FAQ**: dúvidas frequentes.
+
+## Notas
+- Ajuste textos em `views/pages/home.twig`.
+- Atalhos de navegação (menu) ficam em `views/partials/navbar.twig`.
+- Estilos principais estão em `public/assets/css/landing.css`.
+- As fontes são carregadas via Google Fonts no `views/base.twig`.
+- Cards de projetos usam imagens de `public/assets/img/projetos`.
+- Depoimentos usam imagens de `public/assets/img/avatars`.
+- Imagens dos cards de projetos (recomendação):
+- Proporção ideal no layout atual: **4:3** (ex.: `1200x900`, `1600x1200`).
+- Tamanho mínimo aceitável: `1200x900`.
+- Recomendado para qualidade + desempenho: `1600x1200`.
+- Se usar imagem **16:9** (ex.: `1600x900`), haverá corte com `object-fit: cover` enquanto o card estiver em 4:3.
+- Formato sugerido: `JPG` ou `WEBP` otimizado.
+- Faixa de peso recomendada por imagem: `150KB` a `350KB`.
+- Imagem da hero: `cover` vs `contain`:
+- Com `object-fit: cover`: mantém a área sempre preenchida e visual consistente, mas pode cortar bordas da imagem.
+- Com `object-fit: contain`: mostra a imagem completa, sem cortes, mas pode sobrar espaço vazio no bloco.
+- Regra prática: use `cover` para banners/cards com altura fixa e `contain` quando a arte inteira precisa aparecer.
+- Configuração atual padrão: `height` fixa com `object-fit: cover` em `public/assets/css/landing.css`.
 MD
 
   cat > "$dir/routes/web.php" <<'PHP'
 <?php
 
-use App\Controllers\HomeController;
-use Slim\App;
-
-return function (App $app, HomeController $controller): void {
-    $app->get('/', [$controller, 'home']);
-};
+return [
+    ['GET', '/', 'home'],
+];
 PHP
 
   cat > "$dir/src/Core/Env.php" <<'PHP'
@@ -294,24 +343,72 @@ final class Env
 }
 PHP
 
+  cat > "$dir/src/Core/Router.php" <<'PHP'
+<?php
+
+namespace App\Core;
+
+final class Router
+{
+    private string $basePath;
+    private array $routes = [];
+
+    public function __construct(string $basePath = '')
+    {
+        $this->basePath = rtrim($basePath, '/');
+    }
+
+    public function get(string $path, callable $handler): void
+    {
+        $this->routes['GET'][$path] = $handler;
+    }
+
+    public function dispatch(string $method, string $uri): string
+    {
+        $path = parse_url($uri, PHP_URL_PATH) ?: '/';
+        if ($this->basePath !== '' && str_starts_with($path, $this->basePath)) {
+            $path = substr($path, strlen($this->basePath)) ?: '/';
+        }
+
+        $suppressBody = false;
+        if ($method === 'HEAD') {
+            $method = 'GET';
+            $suppressBody = true;
+        }
+
+        $handler = $this->routes[$method][$path] ?? null;
+        if (!$handler) {
+            http_response_code(404);
+            return 'Not found';
+        }
+
+        $result = (string)call_user_func($handler);
+        return $suppressBody ? '' : $result;
+    }
+}
+PHP
+
   cat > "$dir/src/Controllers/HomeController.php" <<'PHP'
 <?php
 
 namespace App\Controllers;
 
-use Psr\Http\Message\ResponseInterface as Response;
-use Psr\Http\Message\ServerRequestInterface as Request;
-use Slim\Views\Twig;
+use Twig\Environment;
 
 final class HomeController
 {
-    public function __construct(private Twig $twig, private array $config)
+    public function __construct(private Environment $twig, private array $config)
     {
     }
 
-    public function home(Request $request, Response $response): Response
+    public function index(): string
     {
-        return $this->twig->render($response, 'pages/home.twig', [
+        return $this->home();
+    }
+
+    public function home(): string
+    {
+        return $this->twig->render('pages/home.twig', [
             'app_name' => $this->config['app_name'] ?? 'Agência',
             'app_mark' => $this->config['app_mark'] ?? 'A',
             'page_title' => $this->config['page_title'] ?? null,
@@ -330,20 +427,6 @@ PHP
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="{% block meta_description %}Landing profissional em PHP + Twig{% endblock %}">
   <meta name="theme-color" content="#0b0f19">
-  <script>
-  (function () {
-    const isValidTheme = (value) => value === "dark" || value === "light";
-    const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
-    let theme = prefersLight ? "light" : "dark";
-    try {
-      const saved = localStorage.getItem("theme");
-      if (isValidTheme(saved)) theme = saved;
-    } catch (e) {}
-    document.documentElement.setAttribute("data-theme", theme);
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", theme === "dark" ? "#0b0f19" : "#f8fafc");
-  })();
-  </script>
 
   {# ==============================
      FAVICON / PWA (opcional)
@@ -1013,14 +1096,8 @@ TWIG
 
 declare(strict_types=1);
 
-use App\Controllers\HomeController;
-use App\Core\Env;
-use Slim\Factory\AppFactory;
-use Slim\Views\Twig;
-use Slim\Views\TwigMiddleware;
-
 require __DIR__ . '/../src/Core/Env.php';
-Env::load(__DIR__ . '/../.env');
+\App\Core\Env::load(__DIR__ . '/../.env');
 
 $autoload = __DIR__ . '/../vendor/autoload.php';
 if (!is_file($autoload)) {
@@ -1031,21 +1108,26 @@ if (!is_file($autoload)) {
 
 require $autoload;
 
-$base = $_ENV['APP_BASE'] ?? '';
+use App\Core\Router;
+use App\Controllers\HomeController;
+use Twig\Environment;
+use Twig\Loader\FilesystemLoader;
 
-$twig = Twig::create(__DIR__ . '/../views', [
+$base = $_ENV['APP_BASE'] ?? '';
+$loader = new FilesystemLoader(__DIR__ . '/../views');
+$twig = new Environment($loader, [
     'cache' => false,
     'auto_reload' => true,
 ]);
-$twig->getEnvironment()->addGlobal('base_url', $base);
-$twig->getEnvironment()->addGlobal('app_env', $_ENV['APP_ENV'] ?? 'prod');
-$twig->getEnvironment()->addGlobal('app_name', $_ENV['APP_NAME'] ?? 'Agência');
-$twig->getEnvironment()->addGlobal('app_mark', $_ENV['APP_MARK'] ?? 'A');
-$twig->getEnvironment()->addGlobal('app_badge', $_ENV['APP_BADGE'] ?? 'PHP 8.3+');
-$twig->getEnvironment()->addGlobal('github_url', $_ENV['GITHUB_URL'] ?? '#');
-$twig->getEnvironment()->addGlobal('x_url', $_ENV['X_URL'] ?? 'https://x.com');
-$twig->getEnvironment()->addGlobal('instagram_url', $_ENV['INSTAGRAM_URL'] ?? 'https://instagram.com');
-$twig->getEnvironment()->addGlobal('whatsapp_url', $_ENV['WHATSAPP_URL'] ?? 'https://wa.me/5584998087340');
+$twig->addGlobal('base_url', $base);
+$twig->addGlobal('app_env', $_ENV['APP_ENV'] ?? 'prod');
+$twig->addGlobal('app_name', $_ENV['APP_NAME'] ?? 'Agência');
+$twig->addGlobal('app_mark', $_ENV['APP_MARK'] ?? 'A');
+$twig->addGlobal('app_badge', $_ENV['APP_BADGE'] ?? 'PHP 8.3+');
+$twig->addGlobal('github_url', $_ENV['GITHUB_URL'] ?? '#');
+$twig->addGlobal('x_url', $_ENV['X_URL'] ?? 'https://x.com');
+$twig->addGlobal('instagram_url', $_ENV['INSTAGRAM_URL'] ?? 'https://instagram.com');
+$twig->addGlobal('whatsapp_url', $_ENV['WHATSAPP_URL'] ?? 'https://wa.me/5584998087340');
 
 $controller = new HomeController($twig, [
     'app_name' => $_ENV['APP_NAME'] ?? 'Agência',
@@ -1053,17 +1135,10 @@ $controller = new HomeController($twig, [
     'page_title' => $_ENV['APP_PAGE_TITLE'] ?? null,
 ]);
 
-$app = AppFactory::create();
-$app->setBasePath($base);
-$app->add(TwigMiddleware::create($app, $twig));
+$router = new Router($base);
+$router->get('/', [$controller, 'index']);
 
-$isDev = ($_ENV['APP_ENV'] ?? 'prod') === 'dev';
-$app->addErrorMiddleware($isDev, $isDev, $isDev);
-
-$routes = require __DIR__ . '/../routes/web.php';
-$routes($app, $controller);
-
-$app->run();
+echo $router->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', $_SERVER['REQUEST_URI'] ?? '/');
 
 PHP
 
@@ -1132,12 +1207,17 @@ HT
   const themeBtns = [document.getElementById("themeToggle"), document.getElementById("themeToggleMobile")]
     .filter(Boolean);
   const root = document.documentElement;
-  const themeColorMeta = document.querySelector('meta[name="theme-color"]');
-  const isValidTheme = (value) => value === "dark" || value === "light";
-  const getTheme = () => {
-    const current = root.getAttribute("data-theme");
-    return isValidTheme(current) ? current : "dark";
+
+  const getTheme = () => root.getAttribute("data-theme") || "dark";
+  const setTheme = (t) => {
+    root.setAttribute("data-theme", t);
+    try { localStorage.setItem("theme", t); } catch (e) {}
   };
+
+  try {
+    const saved = localStorage.getItem("theme");
+    if (saved) setTheme(saved);
+  } catch (e) {}
 
   const updateIcon = (t) => {
     themeBtns.forEach((btnEl) => {
@@ -1145,48 +1225,13 @@ HT
       if (icon) icon.className = t === "dark" ? "bi bi-moon-stars" : "bi bi-sun";
     });
   };
-
-  const updateThemeColor = (t) => {
-    if (themeColorMeta) themeColorMeta.setAttribute("content", t === "dark" ? "#0b0f19" : "#f8fafc");
-  };
-
-  const updateA11y = (t) => {
-    const nextLabel = t === "dark" ? "Ativar tema claro" : "Ativar tema escuro";
-    themeBtns.forEach((btnEl) => {
-      btnEl.setAttribute("aria-pressed", t === "light" ? "true" : "false");
-      btnEl.setAttribute("title", nextLabel);
-      btnEl.setAttribute("aria-label", nextLabel);
-    });
-  };
-
-  const applyTheme = (value) => {
-    const theme = isValidTheme(value) ? value : "dark";
-    root.setAttribute("data-theme", theme);
-    try { localStorage.setItem("theme", theme); } catch (e) {}
-    updateIcon(theme);
-    updateA11y(theme);
-    updateThemeColor(theme);
-  };
-
-  const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
-  const fallbackTheme = prefersLight ? "light" : "dark";
-  let initialTheme = getTheme();
-  try {
-    const saved = localStorage.getItem("theme");
-    if (isValidTheme(saved)) {
-      initialTheme = saved;
-    } else if (!isValidTheme(root.getAttribute("data-theme"))) {
-      initialTheme = fallbackTheme;
-    }
-  } catch (e) {
-    initialTheme = isValidTheme(root.getAttribute("data-theme")) ? getTheme() : fallbackTheme;
-  }
-  applyTheme(initialTheme);
+  updateIcon(getTheme());
 
   themeBtns.forEach((btnEl) => {
     btnEl.addEventListener("click", () => {
       const next = getTheme() === "dark" ? "light" : "dark";
-      applyTheme(next);
+      setTheme(next);
+      updateIcon(next);
     });
   });
 
@@ -2228,9 +2273,8 @@ html[data-theme="light"] code{
   padding: 0 .25rem;
 }
 CSS
-  fi
 
-  echo "$template_version" > "$dir/.site-template"
+  echo "template-v3" > "$dir/.site-template"
 
   if command -v composer >/dev/null 2>&1; then
     (cd "$dir" && COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --no-interaction --prefer-dist)

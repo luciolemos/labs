@@ -1,11 +1,39 @@
 (function () {
   const toggle = document.querySelector('.nav-toggle');
   const topbar = document.querySelector('.topbar');
+  const topnav = document.getElementById('topnav');
+  const closeNav = () => {
+    if (!topbar || !toggle) return;
+    topbar.classList.remove('nav-open');
+    toggle.setAttribute('aria-expanded', 'false');
+  };
   if (toggle && topbar) {
     toggle.addEventListener('click', () => {
       const open = topbar.classList.toggle('nav-open');
       toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeNav();
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!(event.target instanceof Node)) return;
+      if (!topbar.contains(event.target)) {
+        closeNav();
+      }
+    });
+
+    if (topnav) {
+      topnav.addEventListener('click', (event) => {
+        const link = event.target;
+        if (link instanceof HTMLElement && link.closest('a')) {
+          closeNav();
+        }
+      });
+    }
   }
 
   const addBtn = document.querySelector('[data-add-row]');
@@ -19,6 +47,20 @@
   const addRow = () => {
     const clone = template.content.cloneNode(true);
     list.appendChild(clone);
+    const rows = list.querySelectorAll('[data-site-row]');
+    const newRow = rows[rows.length - 1];
+    if (newRow instanceof HTMLElement) {
+      syncLink(newRow);
+      const firstInput = newRow.querySelector('input[name="sites[name][]"]');
+      if (firstInput instanceof HTMLInputElement) {
+        firstInput.focus();
+      }
+    }
+  };
+
+  const markDirty = (row) => {
+    if (!(row instanceof HTMLElement)) return;
+    row.classList.add('row-dirty');
   };
 
   const syncLink = (row) => {
@@ -61,6 +103,9 @@
       event.preventDefault();
       const row = target.closest('[data-site-row]');
       if (row) {
+        if (!confirm('Remover esta linha do formulario?')) {
+          return;
+        }
         row.remove();
       }
     }
@@ -109,6 +154,26 @@
       const row = target.closest('[data-site-row]');
       if (row) {
         syncLink(row);
+        markDirty(row);
+      }
+    }
+    if (target.name === 'sites[name][]' || target.name === 'sites[description][]') {
+      const row = target.closest('[data-site-row]');
+      if (row) {
+        markDirty(row);
+      }
+    }
+  });
+
+  list.addEventListener('change', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) {
+      return;
+    }
+    if (target.name === 'sites[protected][]') {
+      const row = target.closest('[data-site-row]');
+      if (row) {
+        markDirty(row);
       }
     }
   });

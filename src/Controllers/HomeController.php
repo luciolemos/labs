@@ -17,23 +17,35 @@ final class HomeController
     public function index(Request $request, Response $response): Response
     {
         $query = $request->getQueryParams();
+        $search = trim((string)($query['q'] ?? ''));
+        $visibility = (string)($query['visibility'] ?? 'all');
+        if (!in_array($visibility, ['all', 'protected', 'public'], true)) {
+            $visibility = 'all';
+        }
+
         $page = max(1, (int)($query['page'] ?? 1));
         $perPage = (int)($this->config['pagination']['per_page'] ?? 12);
         if ($perPage < 1) {
             $perPage = 12;
         }
+
         $allSites = $this->siteService->all();
-        $total = count($allSites);
+        $sitesFiltered = $this->filterSites($allSites, $search, $visibility);
+        $total = count($sitesFiltered);
         $totalPages = max(1, (int)ceil($total / $perPage));
         if ($page > $totalPages) {
             $page = $totalPages;
         }
         $offset = ($page - 1) * $perPage;
-        $sites = array_slice($allSites, $offset, $perPage);
+        $sites = array_slice($sitesFiltered, $offset, $perPage);
 
         $html = $this->render('home', [
             'title' => $this->config['name'] ?? 'Painel de Sites',
             'sites' => $sites,
+            'filters' => [
+                'q' => $search,
+                'visibility' => $visibility,
+            ],
             'pagination' => [
                 'page' => $page,
                 'perPage' => $perPage,
@@ -47,7 +59,8 @@ final class HomeController
                 'host' => $this->getHostname(),
                 'uptime' => $this->formatUptime($this->getUptimeSeconds()),
                 'lastProvision' => $this->getLastProvisionedAt(),
-                'total' => $total,
+                'total' => count($allSites),
+                'filteredTotal' => $total,
                 'perPage' => $perPage,
             ],
             'auth' => [
@@ -173,5 +186,34 @@ final class HomeController
         }
 
         return date('d/m/Y H:i', $last);
+    }
+
+    private function filterSites(array $sites, string $search, string $visibility): array
+    {
+        return array_values(array_filter($sites, static function ($site) use ($search, $visibility): bool {
+            if (!is_array($site)) {
+                return false;
+            }
+
+            $isProtected = !empty($site['protected']);
+            if ($visibility === 'protected' && !$isProtected) {
+                return false;
+            }
+            if ($visibility === 'public' && $isProtected) {
+                return false;
+            }
+
+            if ($search === '') {
+                return true;
+            }
+
+            $haystack = mb_strtolower(trim(implode(' ', [
+                (string)($site['name'] ?? ''),
+                (string)($site['description'] ?? ''),
+                (string)($site['url'] ?? ''),
+            ])));
+
+            return str_contains($haystack, mb_strtolower($search));
+        }));
     }
 }

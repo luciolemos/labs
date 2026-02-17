@@ -7,11 +7,11 @@
   </div>
 
   <?php if (!empty($saved)): ?>
-    <div class="alert alert-success">Sites atualizados com sucesso.</div>
+    <div class="alert alert-success" role="status" aria-live="polite">Sites atualizados com sucesso.</div>
   <?php endif; ?>
 
   <?php if (!empty($provision)): ?>
-    <div class="alert">
+    <div class="alert" role="status" aria-live="polite">
       <?php foreach ($provision as $item): ?>
         <div>
           <?= htmlspecialchars($item['slug']) ?>:
@@ -23,7 +23,7 @@
   <?php endif; ?>
 
   <?php if (!empty($errors)): ?>
-    <div class="alert">Existem erros no formulario. Corrija e tente novamente.</div>
+    <div class="alert" role="alert" aria-live="assertive">Existem erros no formulario. Corrija e tente novamente.</div>
   <?php endif; ?>
 
   <form class="form" method="post" action="/admin/save">
@@ -50,12 +50,16 @@
           $provisionStatus = $provisionBySlug[$slug] ?? null;
         ?>
         <div class="form-row" data-site-row>
-          <input class="input" name="sites[name][]" placeholder="Nome" value="<?= htmlspecialchars($site['name'] ?? '') ?>" />
-          <input class="input" name="sites[description][]" placeholder="Descricao" value="<?= htmlspecialchars($site['description'] ?? '') ?>" />
-          <input class="input" name="sites[url][]" placeholder="URL" value="<?= htmlspecialchars($site['url'] ?? '') ?>" />
+          <label class="sr-only" for="site-name-<?= (int)$index ?>">Nome do site</label>
+          <input class="input" id="site-name-<?= (int)$index ?>" name="sites[name][]" placeholder="Nome" aria-label="Nome do site" value="<?= htmlspecialchars($site['name'] ?? '') ?>" />
+          <label class="sr-only" for="site-description-<?= (int)$index ?>">Descricao do site</label>
+          <input class="input" id="site-description-<?= (int)$index ?>" name="sites[description][]" placeholder="Descricao" aria-label="Descricao do site" value="<?= htmlspecialchars($site['description'] ?? '') ?>" />
+          <label class="sr-only" for="site-url-<?= (int)$index ?>">URL do site</label>
+          <input class="input" id="site-url-<?= (int)$index ?>" name="sites[url][]" placeholder="URL" aria-label="URL do site" value="<?= htmlspecialchars($site['url'] ?? '') ?>" />
           <?php $urlValue = trim((string)($site['url'] ?? '')); ?>
-          <label class="checkbox" aria-label="Protegido">
-            <input type="checkbox" name="sites[protected][]" value="1" <?= !empty($site['protected']) ? 'checked' : '' ?> />
+          <label class="checkbox" for="site-protected-<?= (int)$index ?>" aria-label="Protegido">
+            <span class="sr-only">Site protegido contra reprovisionamento</span>
+            <input id="site-protected-<?= (int)$index ?>" type="checkbox" name="sites[protected][]" value="1" <?= !empty($site['protected']) ? 'checked' : '' ?> />
           </label>
           <div class="actions">
             <a class="button"
@@ -76,7 +80,7 @@
           </div>
         <?php endif; ?>
         <?php if (!empty($errors[$index])): ?>
-          <div class="help" style="color: var(--danger);">
+          <div class="help" style="color: var(--danger);" role="alert">
             <?= htmlspecialchars(implode(' ', $errors[$index])) ?>
           </div>
         <?php endif; ?>
@@ -85,10 +89,11 @@
 
     <template data-site-template>
       <div class="form-row" data-site-row>
-        <input class="input" name="sites[name][]" placeholder="Nome" value="" />
-        <input class="input" name="sites[description][]" placeholder="Descricao" value="" />
-        <input class="input" name="sites[url][]" placeholder="URL" value="" />
+        <input class="input" name="sites[name][]" placeholder="Nome" aria-label="Nome do site" value="" />
+        <input class="input" name="sites[description][]" placeholder="Descricao" aria-label="Descricao do site" value="" />
+        <input class="input" name="sites[url][]" placeholder="URL" aria-label="URL do site" value="" />
         <label class="checkbox" aria-label="Protegido">
+          <span class="sr-only">Site protegido contra reprovisionamento</span>
           <input type="checkbox" name="sites[protected][]" value="1" />
         </label>
         <div class="actions">
@@ -99,7 +104,7 @@
       </div>
     </template>
 
-    <div style="display:flex; gap:10px; flex-wrap: wrap;">
+    <div class="form-actions">
       <button class="button" type="button" data-add-row>Adicionar linha</button>
       <button class="button" type="submit">Salvar</button>
     </div>
