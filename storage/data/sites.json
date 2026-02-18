@@ -3,36 +3,35 @@
         "name": "2sgb\/2gb\/cbmrn",
         "description": "Site do 2º Subgrupamento de Bombeiros Militar",
         "url": "http:\/\/88.198.104.148\/site1\/",
-        "protected": true
+        "protected": true,
+        "template": "tech-v4-blue"
     },
     {
         "name": "RLC",
         "description": "RLC - Instalações Elétricas e Automação Residencial.",
         "url": "http:\/\/88.198.104.148\/rlc\/",
-        "protected": true
+        "protected": true,
+        "template": "tech-v4-blue"
     },
     {
         "name": "NatalCode",
         "description": "NatalCode",
         "url": "http:\/\/88.198.104.148\/natalcode\/",
-        "protected": true
+        "protected": true,
+        "template": "tech-v4-blue"
     },
     {
         "name": "Site2",
         "description": "Site2",
         "url": "http:\/\/88.198.104.148\/site2\/",
-        "protected": false
+        "protected": true,
+        "template": "tech-v4-blue"
     },
     {
-        "name": "Site3",
-        "description": "Site3",
-        "url": "http:\/\/88.198.104.148\/site3\/",
-        "protected": false
-    },
-    {
-        "name": "Site4",
-        "description": "Site4",
-        "url": "http:\/\/88.198.104.148\/site4\/",
-        "protected": false
+        "name": "YellowSite",
+        "description": "YellowSite",
+        "url": "http:\/\/88.198.104.148\/yellowsite\/",
+        "protected": false,
+        "template": "tech-v4-yellow"
     }
 ]

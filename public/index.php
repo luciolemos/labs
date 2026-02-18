@@ -32,6 +32,11 @@ $logger = new Logger($config['paths']['logs'] ?? (__DIR__ . '/../storage/logs/ap
  */
 $renderWithLayout = static function (string $view, array $data = []): string {
     $viewsPath = dirname(__DIR__) . '/views';
+    $basePathLocal = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+    if ($basePathLocal === '/') {
+        $basePathLocal = '';
+    }
+    $data['basePath'] = $data['basePath'] ?? $basePathLocal;
     extract($data, EXTR_SKIP);
 
     ob_start();

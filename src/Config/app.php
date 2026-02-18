@@ -22,8 +22,13 @@ return [
         'provision_base' => Env::get('ADMIN_PROVISION_BASE', '/var/www'),
         'apache_conf' => Env::get('ADMIN_APACHE_CONF', '/etc/apache2/conf-available/site-paths.conf'),
         'apache_conf_name' => Env::get('ADMIN_APACHE_CONF_NAME', 'site-paths'),
+        'apache_dynamic' => filter_var(Env::get('ADMIN_APACHE_DYNAMIC', 'false'), FILTER_VALIDATE_BOOLEAN),
+        'apache_dynamic_vhost' => Env::get('ADMIN_APACHE_DYNAMIC_VHOST', '/etc/apache2/sites-available/000-default.conf'),
+        'apache_dynamic_marker' => Env::get('ADMIN_APACHE_DYNAMIC_MARKER', 'LABS_DYNAMIC_SITES'),
         'deprovision' => filter_var(Env::get('ADMIN_DEPROVISION', 'false'), FILTER_VALIDATE_BOOLEAN),
         'deprovision_remove_dir' => filter_var(Env::get('ADMIN_DEPROVISION_REMOVE_DIR', 'false'), FILTER_VALIDATE_BOOLEAN),
+        'templates_dir' => Env::get('ADMIN_TEMPLATES_DIR', '/var/www/labs/templates'),
+        'template_default' => Env::get('ADMIN_TEMPLATE_DEFAULT', 'tech-v4-blue'),
     ],
     'pagination' => [
         'per_page' => (int)Env::get('SITE_PER_PAGE', 12),

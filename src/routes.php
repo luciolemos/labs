@@ -13,7 +13,7 @@ use Slim\App;
 return static function (App $app): void {
     $config = require __DIR__ . '/Config/app.php';
     $repo = new SiteRepository($config['paths']['sites'] ?? '', $config['sites'] ?? []);
-    $siteService = new SiteService($repo);
+    $siteService = new SiteService($repo, $config);
     $home = new HomeController($siteService, $config);
     $provision = new ProvisionService($config);
     $logger = new Logger($config['paths']['logs'] ?? (__DIR__ . '/../storage/logs/app.log'));
@@ -23,16 +23,23 @@ return static function (App $app): void {
 
     $app->get('/', [$home, 'index']);
     $app->get('/index.php[/]', [$home, 'index']);
+    $app->get('/readme', [$home, 'readme']);
     $app->get('/about', [$home, 'about']);
     $app->get('/login', [$authController, 'showLogin']);
     $app->post('/login', [$authController, 'login']);
     $app->get('/logout', [$authController, 'logout']);
     $app->get('/reset', [$authController, 'showReset']);
 
-    $sessionAuth = static function ($request, $handler) use ($auth) {
+    $basePath = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+    if ($basePath === '/') {
+        $basePath = '';
+    }
+    $withBase = static fn(string $path): string => $basePath . $path;
+
+    $sessionAuth = static function ($request, $handler) use ($auth, $withBase) {
         if (!$auth->check()) {
             $response = $handler->handle($request)->withStatus(302);
-            return $response->withHeader('Location', '/login');
+            return $response->withHeader('Location', $withBase('/login'));
         }
         return $handler->handle($request);
     };
@@ -41,6 +48,7 @@ return static function (App $app): void {
         $group->get('', [$admin, 'index']);
         $group->post('/save', [$admin, 'save']);
         $group->post('/reprovision', [$admin, 'reprovision']);
+        $group->post('/remove', [$admin, 'remove']);
     })->add($sessionAuth);
 
     $app->get('/api/sites', static function ($request, $response) use ($siteService) {

@@ -1,0 +1,71 @@
+<footer class="footer py-4 mt-5">
+  <div class="container">
+
+    <div class="row gy-3 align-items-center">
+
+      {# Marca / copyright #}
+      <div class="col-12 col-md-7">
+        <div class="d-flex justify-content-start mb-3">
+          <a href="https://bravuhost.com/central/aff.php?aff=8123" target="_blank" rel="noopener noreferrer" class="affiliate-banner" title="Bravulink - Hospedagem de Sites e email profissional.">
+            <img src="{{ base_url }}/assets/img/outras/bravulink.png" alt="BravuHost" class="img-fluid" style="max-width: 150px; height: auto;">
+          </a>
+        </div>
+
+        <div class="small text-secondary-emphasis">
+          <strong>{{ app_name ?? 'System' }} - Landing pages e soluções web</strong><br>
+          © <span id="year">{{ "now"|date("Y") }}</span> — Todos os direitos reservados
+        </div>
+                {# Dados institucionais #}
+        <div class="small text-secondary-emphasis">
+          {{ company_address ?? 'Atendimento remoto · Brasil' }}<br>
+          {{ company_meta ?? 'Template base para projetos PHP 8.3+ · Twig · Bootstrap' }}
+        </div>
+
+        <div class="d-flex gap-3 mt-2">
+          <a class="footer-link" href="{{ github_url ?? '#' }}" aria-label="GitHub">
+            <i class="bi bi-github"></i>
+          </a>
+
+          <a class="footer-link" href="#cta" aria-label="Começar">
+            <i class="bi bi-rocket-takeoff"></i>
+          </a>
+
+          <a class="footer-link" href="{{ x_url ?? 'https://x.com' }}" target="_blank" rel="noopener noreferrer" aria-label="X">
+            <i class="bi bi-twitter-x"></i>
+          </a>
+
+          <a class="footer-link" href="{{ instagram_url ?? 'https://instagram.com' }}" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+            <i class="bi bi-instagram"></i>
+          </a>
+
+          <a class="footer-link" href="{{ whatsapp_url ?? 'https://wa.me/5584998087340' }}" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+            <i class="bi bi-whatsapp"></i>
+          </a>
+        </div>
+
+        <div class="small text-secondary  mt-2 mb-5">
+          natalcode.com.br · PHP 8.3+ · Twig · Bootstrap
+        </div>
+
+
+
+      </div>
+
+      {# Links / ações #}
+{#       <div class="col-12 col-md-5">
+        <div class="d-flex justify-content-md-end">
+          <a href="https://bravuhost.com/central/aff.php?aff=8123" target="_blank" rel="noopener noreferrer" class="affiliate-banner" title="Bravulink - Hospedagem de Sites e email profissional.">
+            <img src="{{ base_url }}/assets/img/outras/bravulink.png" alt="BravuHost" class="img-fluid" style="max-width: 150px; height: auto;">
+          </a>
+        </div>
+      </div> #}
+
+    </div>
+
+  </div>
+</footer>
+
+<button class="back-to-top btn btn-primary shadow" id="backToTop"
+        aria-label="Voltar ao topo" title="Voltar ao topo">
+  <i class="bi bi-chevron-up"></i>
+</button>

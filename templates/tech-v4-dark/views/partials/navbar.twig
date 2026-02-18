@@ -1,0 +1,71 @@
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top py-3 nav-glass">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="{{ base_url ?? '/' }}">
+      <img
+        src="{{ base_url ?? '' }}/assets/img/brands/white.png"
+        alt="{{ app_name ?? 'Labs' }} (tema escuro)"
+        class="navbar-logo logo-dark"
+      >
+      <img
+        src="{{ base_url ?? '' }}/assets/img/brands/black.png"
+        alt="{{ app_name ?? 'Labs' }} (tema claro)"
+        class="navbar-logo logo-light"
+      >
+      <span class="fw-semibold">{{ app_name ?? 'Labs' }}</span>
+
+      <span class="badge rounded-pill text-bg-primary-subtle border border-primary-subtle ms-2 d-none d-sm-inline">
+        {{ app_badge ?? 'Template Base' }}
+      </span>
+    </a>
+
+    <div class="d-flex align-items-center nav-mobile-actions ms-auto">
+      <button
+        class="theme-toggle-icon d-lg-none"
+        id="themeToggleMobile"
+        type="button"
+        aria-label="Alternar tema"
+      >
+        <i class="bi bi-moon-stars"></i>
+      </button>
+
+      <button class="navbar-toggler" type="button"
+              data-bs-toggle="collapse" data-bs-target="#topNav"
+              aria-controls="topNav" aria-expanded="false" aria-label="Abrir menu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+    </div>
+
+    <div class="collapse navbar-collapse" id="topNav">
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+        <li class="nav-item"><a class="nav-link" href="#top">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="#features">Recursos</a></li>
+        <li class="nav-item"><a class="nav-link" href="#projects">Projetos</a></li>
+        <li class="nav-item"><a class="nav-link" href="#depoimentos">Clientes</a></li>
+        <li class="nav-item"><a class="nav-link" href="#how">Como funciona</a></li>
+        <li class="nav-item"><a class="nav-link" href="#docs">Docs</a></li>
+        <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
+        <li class="nav-item">
+          <button
+            class="btn btn-sm btn-outline-light px-3"
+            id="copyModeToggle"
+            type="button"
+            data-copy-mode="{{ copy_mode ?? 'soft' }}"
+            aria-label="Alternar modo de copy"
+          >
+            Copy: {{ (copy_mode ?? 'soft') == 'growth' ? 'Growth' : 'Soft' }}
+          </button>
+        </li>
+        <li class="nav-item d-none d-lg-block">
+          <button class="btn btn-sm btn-outline-light" id="themeToggle" type="button" aria-label="Alternar tema">
+            <i class="bi bi-moon-stars"></i>
+          </button>
+        </li>
+        <li class="nav-item ms-lg-2">
+          <a class="btn btn-outline-light btn-sm px-3" href="#cta">
+            Ver demo <i class="bi bi-arrow-right-short"></i>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>

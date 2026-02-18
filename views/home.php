@@ -1,4 +1,8 @@
-<main class="panel">
+<?php
+$basePath = rtrim((string)($basePath ?? ''), '/');
+$url = static fn(string $path): string => $basePath . $path;
+?>
+<main class="panel panel-home">
   <div class="header">
     <div>
       <h1><?= htmlspecialchars($title ?? 'Painel de Sites') ?></h1>
@@ -17,6 +21,8 @@
         $filters = $filters ?? ['q' => '', 'visibility' => 'all'];
         $searchQuery = (string)($filters['q'] ?? '');
         $visibility = (string)($filters['visibility'] ?? 'all');
+        $templateFilter = (string)($filters['template'] ?? 'all');
+        $templateOptions = $templateOptions ?? [];
       ?>
       <div class="meta">
         <span class="meta-item meta-primary">Ambiente: <?= htmlspecialchars($env) ?></span>
@@ -37,7 +43,7 @@
     </div>
   </div>
 
-  <form class="filter-form" method="get" action="/">
+  <form class="filter-form" method="get" action="<?= htmlspecialchars($url('/')) ?>">
     <div class="filter-row">
       <div class="filter-field">
         <label class="sr-only" for="home-filter-q">Buscar site</label>
@@ -58,9 +64,20 @@
           <option value="public" <?= $visibility === 'public' ? 'selected' : '' ?>>Somente publicos</option>
         </select>
       </div>
+      <div class="filter-field filter-select">
+        <label class="sr-only" for="home-filter-template">Template</label>
+        <select id="home-filter-template" class="input" name="template">
+          <?php foreach ($templateOptions as $option): ?>
+            <?php $value = (string)($option['value'] ?? ''); ?>
+            <option value="<?= htmlspecialchars($value) ?>" <?= $templateFilter === $value ? 'selected' : '' ?>>
+              <?= htmlspecialchars((string)($option['label'] ?? $value)) ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
       <div class="filter-actions">
         <button class="button" type="submit">Filtrar</button>
-        <a class="button" href="/">Limpar</a>
+        <a class="button" href="<?= htmlspecialchars($url('/')) ?>">Limpar</a>
       </div>
     </div>
   </form>
@@ -73,6 +90,7 @@
           <th scope="col">Nome</th>
           <th scope="col">Descricao</th>
           <th scope="col">URL</th>
+          <th scope="col">Template</th>
           <th scope="col">Acoes</th>
         </tr>
       </thead>
@@ -83,20 +101,42 @@
               <td class="table-name" data-label="Nome"><?= htmlspecialchars($site['name']) ?></td>
               <td data-label="Descricao"><?= htmlspecialchars($site['description'] ?? '') ?></td>
               <td data-label="URL">
-                <a class="table-link" href="<?= htmlspecialchars($site['url']) ?>" target="_blank" rel="noopener noreferrer">
-                  <?= htmlspecialchars($site['url']) ?>
-                </a>
+                <?php if (!empty($site['local_managed']) && empty($site['local_available'])): ?>
+                  <span class="table-link table-link-missing"><?= htmlspecialchars($site['url']) ?></span>
+                <?php else: ?>
+                  <a class="table-link" href="<?= htmlspecialchars($site['url']) ?>" target="_blank" rel="noopener noreferrer">
+                    <?= htmlspecialchars($site['url']) ?>
+                  </a>
+                <?php endif; ?>
+              </td>
+              <td data-label="Template">
+                <div class="template-cell">
+                  <span class="template-pill <?= (($site['template_kind'] ?? 'managed') === 'legacy') ? 'template-pill-legacy' : 'template-pill-managed' ?>">
+                    <?= htmlspecialchars((string)($site['template_label'] ?? 'Template')) ?>
+                  </span>
+                  <?php if (!empty($site['template_hint'])): ?>
+                    <small class="template-hint"><?= htmlspecialchars((string)$site['template_hint']) ?></small>
+                  <?php endif; ?>
+                </div>
               </td>
               <td class="table-actions" data-label="Acoes">
-                <a class="button" href="<?= htmlspecialchars($site['url']) ?>" target="_blank" rel="noopener noreferrer">
-                  Abrir
-                </a>
+                <div class="table-actions-inner">
+                  <?php if (!empty($site['local_managed']) && empty($site['local_available'])): ?>
+                    <button class="button" type="button" disabled title="Site local indisponivel">
+                      Indisponivel
+                    </button>
+                  <?php else: ?>
+                    <a class="button" href="<?= htmlspecialchars($site['url']) ?>" target="_blank" rel="noopener noreferrer">
+                      Abrir
+                    </a>
+                  <?php endif; ?>
+                </div>
               </td>
             </tr>
           <?php endforeach; ?>
         <?php else: ?>
           <tr>
-            <td class="table-empty" colspan="4">Nenhum site encontrado para este filtro.</td>
+            <td class="table-empty" colspan="5">Nenhum site encontrado para este filtro.</td>
           </tr>
         <?php endif; ?>
       </tbody>
@@ -114,10 +154,13 @@
     if ($visibility !== 'all') {
       $baseParams['visibility'] = $visibility;
     }
-    $buildPageUrl = static function (int $targetPage) use ($baseParams): string {
+    if ($templateFilter !== 'all') {
+      $baseParams['template'] = $templateFilter;
+    }
+    $buildPageUrl = function (int $targetPage) use ($baseParams, $url): string {
       $params = $baseParams;
       $params['page'] = $targetPage;
-      return '/?' . http_build_query($params);
+      return $url('/?') . http_build_query($params);
     };
   ?>
   <div class="pagination">
@@ -147,6 +190,6 @@
       <div class="name">Sobre o painel</div>
       <div class="description">Rotas extras e ambiente</div>
     </div>
-    <a class="link" href="/about">Ver detalhes</a>
+    <a class="link" href="<?= htmlspecialchars($url('/about')) ?>">Ver detalhes</a>
   </div>
 </main>

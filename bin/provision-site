@@ -26,7 +26,7 @@ site_group="www-data"
 github_auto_publish="${GITHUB_AUTO_PUBLISH:-true}"
 github_owner="${GITHUB_OWNER:-}"
 github_visibility="${GITHUB_VISIBILITY:-private}"
-template_dir="${SITE_TEMPLATE_DIR:-/var/www/labs/templates/site-template-v4}"
+template_dir="${SITE_TEMPLATE_DIR:-/var/www/labs/templates/tech-v4-blue}"
 
 run_as_owner() {
   local cmd="$1"

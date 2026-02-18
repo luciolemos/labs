@@ -1,101 +1,155 @@
 # Labs (Painel de Sites)
 
-Painel para provisionar sites em `/var/www/<slug>` com base Slim 4 + Twig.
+Painel para gerenciar sites em `/var/www/<slug>` com Slim 4 + Twig.
 
-## Estado atual
-- Painel (`labs`): Slim 4
-- Sites gerados: Slim 4 + Twig
-- Publicacao em Apache via alias em `site-paths.conf`
-- Padrao de seguranca: alias sempre aponta para `.../public`
+## Objetivo
+- Criar sites novos por template
+- Editar metadados e template no painel
+- Reprovisionar e remover sites
+- Publicar cada site em `http://88.198.104.148/<slug>/`
 
-## Fluxo de provisionamento
-1. O painel recebe `slug` e dados do site.
-2. Executa `bin/provision-site`.
-3. O script copia o template-base em `/var/www/labs/templates/site-template-v4` para `/var/www/<slug>`.
-4. O script grava/atualiza alias no Apache.
-5. Site fica acessivel em `http://88.198.104.148/<slug>/`.
+## Arquitetura atual
+- Painel: `/var/www/labs`
+- Templates: `/var/www/labs/templates/*`
+- Sites provisionados: `/var/www/<slug>`
+- Banco do painel (JSON):
+  - `storage/data/sites.json`
+  - `storage/data/provisioned.json`
 
-## Template-base (novo fluxo)
-- Template atual: `/var/www/labs/templates/site-template-v4`
-- Script usa por padrao:
-  - `SITE_TEMPLATE_DIR=/var/www/labs/templates/site-template-v4`
-- Fallback:
-  - se `SITE_TEMPLATE_DIR` nao existir, o `bin/provision-site` cai no modo legado (scaffold inline no proprio script).
+## Publicação Apache (modo dinâmico atual)
+O ambiente atual usa um único vhost (`labs.conf`) para:
+- raiz `/` apontando para o site institucional (`/var/www/natalcode/public`)
+- painel em `/labs/`
+- sites provisionados em `/<slug>/...` via regra dinâmica
 
-### Como manter os novos sites iguais ao template
-1. Ajuste arquivos no template-base (`views`, `public/assets`, `src`, etc).
-2. Gere novo site normalmente.
-3. O novo site sai com os ajustes automaticamente.
+Vhost ativo:
+- `/etc/apache2/sites-available/labs.conf`
 
-Observacao:
-- Sites antigos nao mudam sozinhos. Para atualizar existentes, rode migração/reprovisionamento.
-
-## Estrutura gerada
-```text
-/var/www/<slug>
-├─ composer.json
-├─ .env
-├─ public/
-│  ├─ index.php
-│  ├─ .htaccess
-│  └─ assets/
-├─ routes/web.php
-├─ src/
-│  ├─ Controllers/HomeController.php
-│  └─ Core/Env.php
-├─ views/
-├─ storage/
-└─ vendor/
-```
-
-## Stack do site gerado
-- `slim/slim`
-- `slim/psr7`
-- `slim/twig-view`
-- `twig/twig`
-
-## Padrao Apache (obrigatorio)
-Use sempre `public` como destino.
+Configuração recomendada:
 
 ```apache
-Alias /<slug> /var/www/<slug>/public
-<Directory /var/www/<slug>/public>
-  Options FollowSymLinks
-  AllowOverride All
-  Require all granted
-</Directory>
+<VirtualHost *:80>
+    ServerName 88.198.104.148
+
+    DocumentRoot /var/www/natalcode/public
+    <Directory /var/www/natalcode/public>
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    Alias /labs /var/www/labs/public
+    <Directory /var/www/labs/public>
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    # Fallback para subrotas de sites provisionados:
+    # /site1/login, /site1/about, /site2/blog, etc.
+    RewriteEngine On
+    RewriteCond %{REQUEST_URI} !^/labs(?:/|$)
+    RewriteCond %{REQUEST_URI} !^/assets(?:/|$)
+    RewriteCond %{REQUEST_URI} !^/favicon\.ico$
+    RewriteCond %{REQUEST_URI} !^/robots\.txt$
+    RewriteCond %{REQUEST_URI} ^/([A-Za-z0-9_-]+)/(.*)$
+    RewriteCond /var/www/%1/public -d
+    RewriteCond /var/www/%1/public/%2 !-f
+    RewriteCond /var/www/%1/public/%2 !-d
+    RewriteRule ^ /%1/index.php [QSA,L,PT]
+
+    # Mapeamento dinâmico /<slug> -> /var/www/<slug>/public
+    AliasMatch ^/(?!labs(?:/|$)|assets(?:/|$)|favicon\.ico$|robots\.txt$)([A-Za-z0-9_-]+)(/.*)?$ /var/www/$1/public$2
+    <Directory /var/www>
+        Options FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/labs_error.log
+    CustomLog ${APACHE_LOG_DIR}/labs_access.log combined
+</VirtualHost>
 ```
 
-## Configuracao do painel (`.env`)
-Campos principais:
-- `ADMIN_PROVISION=true`
-- `ADMIN_PROVISION_HOST=88.198.104.148`
-- `ADMIN_PROVISION_BASE=/var/www`
-- `ADMIN_APACHE_CONF=/etc/apache2/conf-available/site-paths.conf`
-- `ADMIN_APACHE_CONF_NAME=site-paths`
-
-## Comandos de operacao
-Validar e recarregar Apache:
+Aplicar:
 
 ```bash
 sudo apache2ctl -t
 sudo systemctl reload apache2
 ```
 
-Testes rapidos do site provisionado:
+## site-paths.conf (estado atual)
+`site-paths.conf` é legado e deve ficar desabilitado neste modo dinâmico.
 
+Verificar:
 ```bash
-curl -I http://88.198.104.148/<slug>/
-curl -s -o /dev/null -w "%{http_code}\n" http://88.198.104.148/<slug>/composer.json
+ls -l /etc/apache2/conf-enabled/site-paths.conf
 ```
 
-Esperado:
-- `/<slug>/` -> `200` ou `302`
-- `/<slug>/composer.json` -> `404`
+Desabilitar (se existir):
+```bash
+sudo a2disconf site-paths
+sudo apache2ctl -t
+sudo systemctl reload apache2
+```
 
-## Arquivos chave
-- Script de provisionamento: `bin/provision-site`
-- Script de remoção: `bin/deprovision-site`
-- Serviço de provisionamento: `src/Services/ProvisionService.php`
-- Config da app: `src/Config/app.php`
-- Template-base: `templates/site-template-v4`
+Observação:
+- manter `site-paths.conf` habilitado junto com `labs.conf` dinâmico pode gerar comportamento inconsistente por sobreposição de regras/aliases.
+
+## Fluxo operacional
+1. Usuário cria/edita/remove em `/admin`.
+2. `ProvisionService` aplica template em `/var/www/<slug>`.
+3. O site entra em `sites.json` e `provisioned.json`.
+4. Apache publica automaticamente pela regra dinâmica.
+
+## Configuração `.env` relevante
+```env
+ADMIN_PROVISION=true
+ADMIN_PROVISION_HOST=88.198.104.148
+ADMIN_PROVISION_BASE=/var/www
+
+ADMIN_APACHE_DYNAMIC=true
+ADMIN_APACHE_DYNAMIC_VHOST=/etc/apache2/sites-available/labs.conf
+ADMIN_APACHE_DYNAMIC_MARKER=LABS_DYNAMIC_SITES
+
+ADMIN_TEMPLATES_DIR=/var/www/labs/templates
+ADMIN_TEMPLATE_DEFAULT=tech-v4-blue
+```
+
+## Templates disponíveis
+- `tech-v4-blue`
+- `tech-v4-green`
+- `tech-v4-yellow`
+- `tech-v4-red`
+- `tech-v4-dark`
+
+Cada template possui `template.json` e `README.md` próprio.
+
+## Comandos úteis
+Validar Apache:
+```bash
+sudo apache2ctl -t
+```
+
+Recarregar Apache:
+```bash
+sudo systemctl reload apache2
+```
+
+Teste rápido:
+```bash
+curl -I http://88.198.104.148/
+curl -I http://88.198.104.148/labs/
+curl -I http://88.198.104.148/site1/
+curl -I http://88.198.104.148/site1/login
+```
+
+## Arquivos-chave do Labs
+- `src/Controllers/AdminController.php`
+- `src/Services/ProvisionService.php`
+- `src/Services/SiteService.php`
+- `src/Config/app.php`
+- `bin/provision-site`
+- `bin/deprovision-site`
+
+## Historico de Mudancas
+- Labs (infra e painel): `CHANGELOG.md`
+- Templates de landing page: `templates/tech-v4-*/TEMPLATE_CHANGELOG.md`

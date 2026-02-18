@@ -1,0 +1,3 @@
+RewriteEngine On
+RewriteRule ^assets/(.*)$ public/assets/$1 [L]
+RewriteRule ^(.*)$ public/index.php [L]

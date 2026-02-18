@@ -1,3 +1,7 @@
+<?php
+$basePath = rtrim((string)($basePath ?? ''), '/');
+$url = static fn(string $path): string => $basePath . $path;
+?>
 <main class="panel">
   <div class="header">
     <div>
@@ -11,7 +15,7 @@
   </div>
 
   <div style="display:flex; gap:10px; flex-wrap: wrap;">
-    <a class="button" href="/">Voltar para o painel</a>
-    <a class="button" href="/about">Ver sobre o sistema</a>
+    <a class="button" href="<?= htmlspecialchars($url('/')) ?>">Voltar para o painel</a>
+    <a class="button" href="<?= htmlspecialchars($url('/about')) ?>">Ver sobre o sistema</a>
   </div>
 </main>

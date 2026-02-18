@@ -39,14 +39,14 @@ final class AuthController
 
         if (!$this->auth->attempt($user, $pass)) {
             return $response
-                ->withHeader('Location', '/login?error=1')
+                ->withHeader('Location', $this->path('/login?error=1'))
                 ->withStatus(302);
         }
 
         $this->auth->login($user);
 
         return $response
-            ->withHeader('Location', '/admin')
+            ->withHeader('Location', $this->path('/admin'))
             ->withStatus(302);
     }
 
@@ -55,7 +55,7 @@ final class AuthController
         $this->auth->logout();
 
         return $response
-            ->withHeader('Location', '/login')
+            ->withHeader('Location', $this->path('/login'))
             ->withStatus(302);
     }
 
@@ -75,6 +75,7 @@ final class AuthController
     private function render(string $view, array $data = []): string
     {
         $viewsPath = dirname(__DIR__, 2) . '/views';
+        $data['basePath'] = $data['basePath'] ?? $this->resolveBasePath();
 
         extract($data, EXTR_SKIP);
 
@@ -85,5 +86,16 @@ final class AuthController
         ob_start();
         require $viewsPath . '/layout.php';
         return ob_get_clean();
+    }
+
+    private function resolveBasePath(): string
+    {
+        $basePath = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+        return $basePath === '/' ? '' : $basePath;
+    }
+
+    private function path(string $path): string
+    {
+        return $this->resolveBasePath() . $path;
     }
 }
